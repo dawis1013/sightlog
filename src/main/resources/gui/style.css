@@ -1,0 +1,149 @@
+/* Global Configuration & Colors */
+.root {
+    -fx-base: #121214;
+    -fx-background-color: #121214;
+    -fx-control-inner-background: #1a1a1e;
+
+    /* Typography */
+    -fx-font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+    -fx-font-size: 13px;
+
+    /* Accent Colors */
+    -primary-color: #6366f1;       /* Indigo Accent */
+    -primary-hover: #4f46e5;
+    -bg-surface: #1a1a1e;          /* Card / Table Backgrounds */
+    -bg-header: #26262b;
+    -border-muted: #2d2d34;
+    -text-main: #f4f4f5;
+    -text-muted: #a1a1aa;
+}
+
+/* Labels and Texts */
+.label {
+    -fx-text-fill: -text-main;
+}
+.label-muted {
+    -fx-text-fill: -text-muted;
+}
+
+/* ToolBar styling */
+.tool-bar {
+    -fx-background-color: #0d0d0f;
+    -fx-border-color: -border-muted;
+    -fx-border-width: 0 0 1px 0;
+}
+
+/* Modern Flat Buttons */
+.button {
+    -fx-background-color: -bg-header;
+    -fx-text-fill: -text-main;
+    -fx-border-color: -border-muted;
+    -fx-border-radius: 6px;
+    -fx-background-radius: 6px;
+    -fx-padding: 6px 14px;
+    -fx-font-weight: bold;
+    -fx-transition: all 0.2s ease-in-out;
+}
+.button:hover {
+    -fx-background-color: -primary-color;
+    -fx-border-color: -primary-hover;
+    -fx-text-fill: #ffffff;
+}
+.button:pressed {
+    -fx-background-color: -primary-hover;
+}
+
+/* Style variants for critical action buttons */
+#btnAddMedia, #btnAddPart {
+    -fx-background-color: rgba(99, 102, 241, 0.15);
+    -fx-text-fill: #a5b4fc;
+    -fx-border-color: rgba(99, 102, 241, 0.4);
+}
+#btnAddMedia:hover, #btnAddPart:hover {
+    -fx-background-color: -primary-color;
+    -fx-text-fill: #ffffff;
+}
+
+/* Split Pane Divider styling */
+.split-pane {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+.split-pane *.split-pane-divider {
+    -fx-background-color: -border-muted;
+    -fx-padding: 0 2px 0 2px;
+}
+
+/* Modern Table View Layout */
+.table-view {
+    -fx-background-color: transparent;
+    -fx-border-color: -border-muted;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    /* Forces rounded corners clip on inner table elements */
+    -fx-padding: 1px;
+}
+
+/* Header Columns styling */
+.table-view .column-header-background {
+    -fx-background-color: -bg-header;
+    -fx-background-radius: 8px 8px 0 0;
+    -fx-padding: 0 0 1px 0;
+}
+.table-view .column-header {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent -border-muted transparent transparent;
+    -fx-size: 38px;
+}
+.table-view .column-header .label {
+    -fx-text-fill: -text-muted;
+    -fx-font-weight: bold;
+    -fx-font-size: 12px;
+}
+
+/* Row & Cells Customization */
+.table-row-cell {
+    -fx-background-color: -bg-surface;
+    -fx-border-color: transparent transparent -border-muted transparent;
+    -fx-cell-size: 34px;
+}
+.table-row-cell:odd {
+    -fx-background-color: #161619;
+}
+.table-row-cell:filled:hover {
+    -fx-background-color: #222229;
+}
+.table-row-cell:filled:selected {
+    -fx-background-color: rgba(99, 102, 241, 0.25);
+    -fx-border-color: transparent transparent -primary-color transparent;
+}
+.table-view .table-cell {
+    -fx-text-fill: -text-main;
+    -fx-padding: 0 8px 0 8px;
+    -fx-alignment: CENTER_LEFT;
+}
+
+/* Visual cues for cells while in Inline Editing Mode */
+.table-view .table-cell:editing {
+    -fx-padding: 0;
+    -fx-background-color: #27272a;
+}
+.table-cell .text-field {
+    -fx-background-color: transparent;
+    -fx-text-fill: #ffffff;
+    -fx-padding: 0 8px 0 8px;
+    -fx-border-color: -primary-color;
+    -fx-border-width: 1px;
+}
+
+/* Separators */
+.separator:vertical .line {
+    -fx-border-color: transparent transparent transparent -border-muted;
+}
+
+/* Footer Control Bar styling */
+#bottomStatusBar {
+    -fx-background-color: #0d0d0f;
+    -fx-border-color: -border-muted;
+    -fx-border-width: 1px 0 0 0;
+}
