@@ -16,86 +16,72 @@
 
     <top>
         <ToolBar BorderPane.alignment="CENTER">
-            <items>
-                <Button fx:id="btnAddMedia" mnemonicParsing="false" text="➕ Add New Media" />
-                <Button fx:id="btnAddPart" mnemonicParsing="false" text="➕ Add Part / Season" />
-                <Separator orientation="VERTICAL" />
-                <Button fx:id="btnRefresh" mnemonicParsing="false" text="🔄 Refresh Data" />
-            </items>
             <padding>
-                <Insets bottom="10.0" left="15.0" right="15.0" top="10.0" />
+                <Insets bottom="10.0" left="15.0" right="15.0" top="10.0"/>
             </padding>
+            <Button fx:id="btnAddMedia" mnemonicParsing="false" text="➕ Add New Media"/>
+            <Button fx:id="btnAddPart" mnemonicParsing="false" text="➕ Add Part / Season"/>
+            <Separator orientation="VERTICAL"/>
+            <Button fx:id="btnRefresh" mnemonicParsing="false" text="🔄 Refresh Data"/>
         </ToolBar>
     </top>
 
     <center>
         <SplitPane dividerPositions="0.45" prefHeight="160.0" prefWidth="200.0" BorderPane.alignment="CENTER">
-            <items>
+            <VBox spacing="10.0">
+                <padding>
+                    <Insets bottom="10.0" left="10.0" right="5.0" top="10.0"/>
+                </padding>
+                <Label style="-fx-font-weight: bold; -fx-font-size: 14px;" text="Media Library Overview"/>
+                <TableView fx:id="tblMediaOverview" editable="true" VBox.vgrow="ALWAYS">
+                    <columns>
+                        <TableColumn fx:id="colMediaTitle" prefWidth="140.0" text="Title"/>
+                        <TableColumn fx:id="colMediaType" prefWidth="90.0" text="Type"/>
+                        <TableColumn fx:id="colMediaCreator" prefWidth="110.0" text="Creator"/>
+                        <TableColumn fx:id="colMediaStudio" prefWidth="100.0" text="Studio"/>
+                        <TableColumn fx:id="colMediaPartsCount" editable="false" prefWidth="60.0" text="Parts"/>
+                        <TableColumn fx:id="colMediaStatus" editable="false" prefWidth="95.0" text="Status"/>
+                        <TableColumn fx:id="colMediaAvgRating" editable="false" prefWidth="75.0" text="Avg Rating"/>
+                    </columns>
+                    <columnResizePolicy>
+                        <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+                    </columnResizePolicy>
+                </TableView>
+            </VBox>
 
-                <VBox spacing="10.0">
-                    <children>
-                        <Label style="-fx-font-weight: bold; -fx-font-size: 14px;" text="Media Library Overview" />
-                        <TableView fx:id="tblMediaOverview" editable="true" VBox.vgrow="ALWAYS">
-                            <columns>
-                                <TableColumn fx:id="colMediaId" editable="false" prefWidth="50.0" text="ID" />
-                                <TableColumn fx:id="colMediaTitle" prefWidth="140.0" text="Title" />
-                                <TableColumn fx:id="colMediaType" prefWidth="90.0" text="Type" />
-                                <TableColumn fx:id="colMediaCreator" prefWidth="110.0" text="Creator" />
-                                <TableColumn fx:id="colMediaStudio" prefWidth="100.0" text="Studio" />
-                                <TableColumn fx:id="colMediaPartsCount" editable="false" prefWidth="60.0" text="Parts" />
-                                <TableColumn fx:id="colMediaStatus" editable="false" prefWidth="95.0" text="Status" />
-                                <TableColumn fx:id="colMediaAvgRating" editable="false" prefWidth="75.0" text="Avg Rating" />
-                            </columns>
-                            <columnResizePolicy>
-                                <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
-                            </columnResizePolicy>
-                        </TableView>
-                    </children>
-                    <padding>
-                        <Insets bottom="10.0" left="10.0" right="5.0" top="10.0" />
-                    </padding>
-                </VBox>
+            <VBox spacing="10.0">
+                <padding>
+                    <Insets bottom="10.0" left="5.0" right="10.0" top="10.0"/>
+                </padding>
+                <Label style="-fx-font-weight: bold; -fx-font-size: 14px;" text="Tracked Parts &amp; Seasons"/>
+                <TableView fx:id="tblMediaParts" editable="true" VBox.vgrow="ALWAYS">
+                    <columns>
+                        <TableColumn fx:id="colPartNumber" prefWidth="55.0" text="Part #"/>
+                        <TableColumn fx:id="colPartTitle" prefWidth="110.0" text="Part Title"/>
+                        <TableColumn fx:id="colPartYear" prefWidth="65.0" text="Year"/>
+                        <TableColumn fx:id="colPartStatus" prefWidth="100.0" text="Status"/>
+                        <TableColumn fx:id="colPartRating" prefWidth="60.0" text="Rating"/>
+                        <TableColumn fx:id="colPartStarted" prefWidth="95.0" text="Started At"/>
+                        <TableColumn fx:id="colPartFinished" prefWidth="95.0" text="Finished At"/>
+                        <TableColumn fx:id="colPartNotes" prefWidth="140.0" text="Notes"/>
+                    </columns>
+                    <columnResizePolicy>
+                        <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+                    </columnResizePolicy>
+                </TableView>
+            </VBox>
 
-                <VBox spacing="10.0">
-                    <children>
-                        <Label style="-fx-font-weight: bold; -fx-font-size: 14px;" text="Tracked Parts &amp; Seasons" />
-                        <TableView fx:id="tblMediaParts" editable="true" VBox.vgrow="ALWAYS">
-                            <columns>
-                                <TableColumn fx:id="colPartNumber" prefWidth="55.0" text="Part #" />
-                                <TableColumn fx:id="colPartTitle" prefWidth="110.0" text="Part Title" />
-                                <TableColumn fx:id="colPartYear" prefWidth="65.0" text="Year" />
-                                <TableColumn fx:id="colPartStatus" prefWidth="100.0" text="Status" />
-                                <TableColumn fx:id="colPartRating" prefWidth="60.0" text="Rating" />
-                                <TableColumn fx:id="colPartStarted" prefWidth="95.0" text="Started At" />
-                                <TableColumn fx:id="colPartFinished" prefWidth="95.0" text="Finished At" />
-                                <TableColumn fx:id="colPartNotes" prefWidth="140.0" text="Notes" />
-                            </columns>
-                            <columnResizePolicy>
-                                <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
-                            </columnResizePolicy>
-                        </TableView>
-                    </children>
-                    <padding>
-                        <Insets bottom="10.0" left="5.0" right="10.0" top="10.0" />
-                    </padding>
-                </VBox>
-
-            </items>
         </SplitPane>
     </center>
 
     <bottom>
         <HBox id="bottomStatusBar" alignment="CENTER_LEFT" spacing="10.0" BorderPane.alignment="CENTER">
             <padding>
-                <Insets bottom="5.0" left="15.0" right="15.0" top="5.0" />
+                <Insets bottom="5.0" left="15.0" right="15.0" top="5.0"/>
             </padding>
-            <children>
-                <Label style="-fx-font-size: 11px;" styleClass="label-muted" text="Database Connection Info:" />
-                <Separator orientation="VERTICAL" />
-                <Label style="-fx-font-size: 11px; -fx-text-fill: #34d399; -fx-font-weight: bold;" text="PRAGMA foreign_keys = ON" />
-                <Separator orientation="VERTICAL" />
-                <Label fx:id="lblStatusMessage" style="-fx-font-size: 11px;" styleClass="label-muted" text="Ready" HBox.hgrow="ALWAYS" />
-            </children>
+            <Label style="-fx-font-size: 11px;" styleClass="label-muted" text="Database Connection Info:"/>
+            <Label fx:id="lblStatusMessage" style="-fx-font-size: 11px;" styleClass="label-muted" text="Ready"
+                   HBox.hgrow="ALWAYS"/>
         </HBox>
     </bottom>
 </BorderPane>

@@ -7,10 +7,9 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Node;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import net.dawis.sightlog.datahandling.DatabaseSession;
 import net.dawis.sightlog.datahandling.UserSession;
@@ -23,8 +22,10 @@ import org.hibernate.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 public class MainController {
 
@@ -37,7 +38,6 @@ public class MainController {
 
     // Left Panel: Media Overview Table
     @FXML private TableView<Media> tblMediaOverview;
-    @FXML private TableColumn<Media, Long> colMediaId;
     @FXML private TableColumn<Media, String> colMediaTitle;
     @FXML private TableColumn<Media, String> colMediaType;
     @FXML private TableColumn<Media, String> colMediaCreator;
@@ -83,8 +83,35 @@ public class MainController {
             }
         });
 
-        // Wire up the refresh button functionality
+        tblMediaOverview.setOnMouseClicked(event -> {
+            Node target = (Node) event.getTarget();
+            while (target != null && target != tblMediaOverview) {
+                if (target instanceof TableRow && !((TableRow<?>) target).isEmpty()) {
+                    return; // Hit a valid row, preserve selection
+                }
+                target = target.getParent();
+            }
+            tblMediaOverview.getSelectionModel().clearSelection();
+            mediaPartsList.clear();
+        });
+
+        tblMediaParts.setOnMouseClicked(event -> {
+            Node target = (Node) event.getTarget();
+            while (target != null && target != tblMediaParts) {
+                if (target instanceof TableRow && !((TableRow<?>) target).isEmpty()) {
+                    return; // Hit a valid row, preserve selection
+                }
+                target = target.getParent();
+            }
+            tblMediaParts.getSelectionModel().clearSelection();
+        });
+
+        // Wire up button actions
         btnRefresh.setOnAction(event -> refreshData());
+
+        // Explicit action routing based on button context
+        btnAddMedia.setOnAction(event -> handleOpenDialogAction(true));
+        btnAddPart.setOnAction(event -> handleOpenDialogAction(false));
 
         // Initial Data Load on Startup
         refreshData();
@@ -95,7 +122,6 @@ public class MainController {
      * mirroring the logic of the database's `media_overview` view.
      */
     private void setupOverviewTableColumns() {
-        colMediaId.setCellValueFactory(new PropertyValueFactory<>("id"));
         colMediaTitle.setCellValueFactory(new PropertyValueFactory<>("title"));
         colMediaCreator.setCellValueFactory(new PropertyValueFactory<>("creator"));
         colMediaStudio.setCellValueFactory(new PropertyValueFactory<>("studio"));
@@ -198,4 +224,98 @@ public class MainController {
         }
     }
 
+    /**
+     * Evaluates active UI selection models to open either a fresh Media form
+     * or append a new child Part to an existing tracked media profile.
+     */
+    private void handleOpenDialogAction(boolean isBrandNewMedia) {
+        Media selectedMedia = tblMediaOverview.getSelectionModel().getSelectedItem();
+
+        // Guard Clause: Prevent exceptions if user attempts to add a part with no root selection active
+        if (!isBrandNewMedia && selectedMedia == null) {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("Selection Required");
+            alert.setHeaderText("No Media Title Selected");
+            alert.setContentText("Please select a valid Media entry from the left table before attempting to append a new tracking segment/part.");
+            alert.showAndWait();
+            return;
+        }
+
+        try {
+            FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("/gui/media_dialog.fxml"));
+            DialogPane dialogPane = loader.load();
+            MediaDialogController dialogController = loader.getController();
+
+            Dialog<ButtonType> dialog = new Dialog<>();
+            dialog.setDialogPane(dialogPane);
+
+            // Link look-and-feel stylesheet
+            if (getClass().getResource("/gui/style.css") != null) {
+                dialog.getDialogPane().getStylesheets().add(getClass().getResource("/gui/style.css").toExternalForm());
+            }
+
+            if (isBrandNewMedia) {
+                dialog.setTitle("Add New Media Entry");
+                dialogController.setContext(null);
+            } else {
+                dialog.setTitle("Add Part to: " + selectedMedia.getTitle());
+                dialogController.setContext(selectedMedia);
+            }
+
+            Optional<ButtonType> result = dialog.showAndWait();
+            if (result.isPresent() && result.get() == ButtonType.OK) {
+                if (dialogController.isValidInput()) {
+                    saveNewFormEntry(dialogController, isBrandNewMedia ? null : selectedMedia);
+                    refreshData(); // Synchronize live DB states back to presentation structures
+                }
+            }
+        } catch (IOException e) {
+            LOG.error("Failed to accurately display input wizard dialog frame", e);
+        }
+    }
+
+    /**
+     * Implements a transactional workflow mapping form inputs to relational backend database entities.
+     */
+    private void saveNewFormEntry(MediaDialogController controller, Media selectedMedia) {
+        User currentUser = UserSession.getCurrentUser();
+        if (currentUser == null) {
+            LOG.error("Session execution terminated: No active context user authenticated");
+            return;
+        }
+
+        try (Session session = DatabaseSession.open()) {
+            Transaction tx = session.beginTransaction();
+
+            if (selectedMedia == null) {
+                // Case A: Create completely new media tree parent alongside its initial base part element
+                Media newMedia = controller.getMediaInput();
+                newMedia.setUser(currentUser);
+
+                MediaPart initialPart = controller.getMediaPartInput();
+                initialPart.setMedia(newMedia);
+                newMedia.getParts().add(initialPart);
+
+                session.persist(newMedia);
+                LOG.info("Successfully registered core media title profile: {}", newMedia.getTitle());
+            } else {
+                // Case B: Append tracking part segment to an existing parent node record
+                MediaPart newPart = controller.getMediaPartInput();
+
+                // Re-fetch object scope inside active session boundary to eliminate detached state conflicts
+                Media managedParent = session.find(Media.class, selectedMedia.getId());
+                newPart.setMedia(managedParent);
+                managedParent.getParts().add(newPart);
+
+                session.persist(newPart);
+                LOG.info("Appended part collection sequence index {} to parent ID: {}", newPart.getPartNumber(), managedParent.getId());
+            }
+
+            tx.commit();
+            lblStatusMessage.setText("Log database entry processed successfully!");
+        } catch (Exception e) {
+            LOG.error("Critical error encountered writing new logging configurations to database layer", e);
+            lblStatusMessage.setText("Database write failure! Integrity constraint violated.");
+        }
+    }
 }

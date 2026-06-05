@@ -99,4 +99,8 @@ public class Media {
     public void setVersion(int version) {
         this.version = version;
     }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
 }

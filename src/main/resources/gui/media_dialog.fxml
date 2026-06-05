@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.ButtonType?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.DatePicker?>
+<?import javafx.scene.control.DialogPane?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<DialogPane prefWidth="500.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="net.dawis.sightlog.gui.MediaDialogController">
+    <content>
+        <ScrollPane fitToWidth="true" hbarPolicy="NEVER" maxHeight="560.0"
+                    style="-fx-background-color: transparent; -fx-background: transparent;">
+            <VBox spacing="14.0">
+                <padding>
+                    <Insets bottom="12.0" left="12.0" right="12.0" top="12.0"/>
+                </padding>
+                <VBox fx:id="mediaSection" spacing="10.0">
+                    <Label style="-fx-font-weight: bold; -fx-text-fill: #6366f1; -fx-font-size: 14px;"
+                           text="Media Root Specifications"/>
+                    <GridPane hgap="10.0" vgap="10.0">
+                        <columnConstraints>
+                            <ColumnConstraints minWidth="110.0" prefWidth="120.0"/>
+                            <ColumnConstraints hgrow="ALWAYS"/>
+                        </columnConstraints>
+                        <Label text="Media Title *" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                        <TextField fx:id="txtMediaTitle" promptText="e.g. Stranger Things, Inception"
+                                   GridPane.rowIndex="0" GridPane.columnIndex="1"
+                                   style="-fx-background-color: #1e1e22; -fx-text-fill: #f4f4f5; -fx-prompt-text-fill: #52525b; -fx-border-color: #27272a;"/>
+
+                        <Label text="Media Type *" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                        <ComboBox fx:id="cmbMediaType" maxWidth="Infinity" promptText="Select Format Type"
+                                  GridPane.rowIndex="1" GridPane.columnIndex="1"
+                                  style="-fx-background-color: #1e1e22; -fx-text-fill: #f4f4f5; -fx-prompt-text-fill: #52525b; -fx-border-color: #27272a;"/>
+
+                        <Label text="Creator / Director" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+                        <TextField fx:id="txtMediaCreator" promptText="e.g. The Duffer Brothers"
+                                   GridPane.rowIndex="2" GridPane.columnIndex="1"
+                                   style="-fx-background-color: #1e1e22; -fx-text-fill: #f4f4f5; -fx-prompt-text-fill: #52525b; -fx-border-color: #27272a;"/>
+
+                        <Label text="Studio / Network" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+                        <TextField fx:id="txtMediaStudio" promptText="e.g. Netflix" GridPane.rowIndex="3"
+                                   GridPane.columnIndex="1"
+                                   style="-fx-background-color: #1e1e22; -fx-text-fill: #f4f4f5; -fx-prompt-text-fill: #52525b; -fx-border-color: #27272a;"/>
+
+                        <Label text="Description" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
+                        <TextArea fx:id="txtMediaDesc" prefHeight="65.0" wrapText="true"
+                                  promptText="Enter brief plot summary..." GridPane.rowIndex="4"
+                                  GridPane.columnIndex="1"
+                                  style="-fx-background-color: #1e1e22; -fx-text-fill: #f4f4f5; -fx-prompt-text-fill: #52525b; -fx-border-color: #27272a;"/>
+                    </GridPane>
+                    <Separator>
+                        <padding>
+                            <Insets bottom="5.0" top="10.0"/>
+                        </padding>
+                    </Separator>
+                </VBox>
+
+                <VBox spacing="10.0">
+                    <Label style="-fx-font-weight: bold; -fx-text-fill: #6366f1; -fx-font-size: 14px;"
+                           text="Part / Season Tracking Details"/>
+                    <GridPane hgap="10.0" vgap="10.0">
+                        <columnConstraints>
+                            <ColumnConstraints minWidth="110.0" prefWidth="120.0"/>
+                            <ColumnConstraints hgrow="ALWAYS"/>
+                        </columnConstraints>
+                        <Label text="Part / Season # *" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                        <TextField fx:id="txtPartNumber" promptText="e.g. 1" GridPane.rowIndex="0"
+                                   GridPane.columnIndex="1"
+                                   style="-fx-background-color: #1e1e22; -fx-text-fill: #f4f4f5; -fx-prompt-text-fill: #52525b; -fx-border-color: #27272a;"/>
+
+                        <Label text="Part Title Override" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                        <TextField fx:id="txtPartTitle" promptText="Defaults to Media Title if blank"
+                                   GridPane.rowIndex="1" GridPane.columnIndex="1"
+                                   style="-fx-background-color: #1e1e22; -fx-text-fill: #f4f4f5; -fx-prompt-text-fill: #52525b; -fx-border-color: #27272a;"/>
+
+                        <Label text="Release Year" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+                        <TextField fx:id="txtPartYear" promptText="YYYY" GridPane.rowIndex="2"
+                                   GridPane.columnIndex="1"
+                                   style="-fx-background-color: #1e1e22; -fx-text-fill: #f4f4f5; -fx-prompt-text-fill: #52525b; -fx-border-color: #27272a;"/>
+
+                        <Label text="Tracking Status *" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+                        <ComboBox fx:id="cmbPartStatus" maxWidth="Infinity" GridPane.rowIndex="3"
+                                  GridPane.columnIndex="1"
+                                  style="-fx-background-color: #1e1e22; -fx-text-fill: #f4f4f5; -fx-prompt-text-fill: #52525b; -fx-border-color: #27272a;"/>
+
+                        <Label text="Rating (0.0 - 10.0)" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
+                        <TextField fx:id="txtPartRating"
+                                   promptText="Locked unless status is Finished/Dropped"
+                                   GridPane.rowIndex="4" GridPane.columnIndex="1"
+                                   style="-fx-background-color: #1e1e22; -fx-text-fill: #f4f4f5; -fx-prompt-text-fill: #52525b; -fx-border-color: #27272a;"/>
+
+                        <Label text="Dates" GridPane.rowIndex="5" GridPane.columnIndex="0"/>
+                        <HBox spacing="8.0" GridPane.rowIndex="5" GridPane.columnIndex="1">
+                            <DatePicker fx:id="dpPartStarted" promptText="Started Date"
+                                        HBox.hgrow="ALWAYS" maxWidth="Infinity"
+                                        style="-fx-background-color: #1e1e22; -fx-text-fill: #f4f4f5; -fx-prompt-text-fill: #52525b; -fx-border-color: #27272a;"/>
+                            <DatePicker fx:id="dpPartFinished" promptText="Finished Date"
+                                        HBox.hgrow="ALWAYS" maxWidth="Infinity"
+                                        style="-fx-background-color: #1e1e22; -fx-text-fill: #f4f4f5; -fx-prompt-text-fill: #52525b; -fx-border-color: #27272a;"/>
+                        </HBox>
+
+                        <Label text="Log Entry Notes" GridPane.rowIndex="6" GridPane.columnIndex="0"/>
+                        <TextArea fx:id="txtPartNotes" prefHeight="65.0" wrapText="true"
+                                  promptText="Personal notes and reviews..." GridPane.rowIndex="6"
+                                  GridPane.columnIndex="1"
+                                  style="-fx-background-color: #1e1e22; -fx-text-fill: #f4f4f5; -fx-prompt-text-fill: #52525b; -fx-border-color: #27272a;"/>
+                    </GridPane>
+                </VBox>
+            </VBox>
+        </ScrollPane>
+    </content>
+    <ButtonType fx:constant="OK"/>
+    <ButtonType fx:constant="CANCEL"/>
+</DialogPane>
