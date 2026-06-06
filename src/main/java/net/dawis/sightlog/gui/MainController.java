@@ -28,13 +28,10 @@ import java.util.List;
 import java.util.Optional;
 
 public class MainController {
-
     private static final Logger LOG = LoggerFactory.getLogger(MainController.class);
 
     // Top Action Bar
-    @FXML private Button btnAddMedia;
-    @FXML private Button btnAddPart;
-    @FXML private Button btnRefresh;
+    @FXML private Button btnAddMedia, btnAddPart, btnRefresh;
 
     // Left Panel: Media Overview Table
     @FXML private TableView<Media> tblMediaOverview;
@@ -104,6 +101,18 @@ public class MainController {
                 target = target.getParent();
             }
             tblMediaParts.getSelectionModel().clearSelection();
+        });
+
+        // Configure Double-Click Row Interaction on the Parts Table View
+        tblMediaParts.setRowFactory(tv -> {
+            TableRow<MediaPart> row = new TableRow<>();
+            row.setOnMouseClicked(event -> {
+                if (event.getClickCount() == 2 && (!row.isEmpty())) {
+                    MediaPart selectedPart = row.getItem();
+                    handleEditMediaPart(selectedPart);
+                }
+            });
+            return row;
         });
 
         // Wire up button actions
@@ -249,11 +258,6 @@ public class MainController {
             Dialog<ButtonType> dialog = new Dialog<>();
             dialog.setDialogPane(dialogPane);
 
-            // Link look-and-feel stylesheet
-            if (getClass().getResource("/gui/style.css") != null) {
-                dialog.getDialogPane().getStylesheets().add(getClass().getResource("/gui/style.css").toExternalForm());
-            }
-
             if (isBrandNewMedia) {
                 dialog.setTitle("Add New Media Entry");
                 dialogController.setContext(null);
@@ -316,6 +320,83 @@ public class MainController {
         } catch (Exception e) {
             LOG.error("Critical error encountered writing new logging configurations to database layer", e);
             lblStatusMessage.setText("Database write failure! Integrity constraint violated.");
+        }
+    }
+
+    private void handleEditMediaPart(MediaPart selectedPart) {
+        if (selectedPart == null) return;
+
+        try {
+            // 1. Load the existing layout dialog structure
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/media_dialog.fxml"));
+            DialogPane dialogPane = loader.load();
+            MediaDialogController controller = loader.getController();
+
+            // 2. Inject active entity metadata properties directly into UI form
+            controller.populateFields(selectedPart);
+
+            // 3. Build a modal presentation window context
+            Dialog<ButtonType> dialog = new Dialog<>();
+            dialog.setDialogPane(dialogPane);
+            dialog.setTitle("Edit Tracking Partition - " + selectedPart.getMedia().getTitle());
+
+            Optional<ButtonType> result = dialog.showAndWait();
+            if (result.isPresent() && result.get() == ButtonType.OK) {
+
+                try (Session session = DatabaseSession.open()) {
+                    Transaction tx = session.beginTransaction();
+
+                    // Load attached references directly inside active persistence engine framework
+                    MediaPart managedPart = session.find(MediaPart.class, selectedPart.getId());
+                    Media managedMedia = managedPart.getMedia();
+
+                    // Extract modified payload values from screen fields
+                    Media inputMedia = controller.getMediaInput();
+                    MediaPart inputPart = controller.getMediaPartInput();
+
+                    // Synchronize parent core profile parameters
+                    managedMedia.setTitle(inputMedia.getTitle());
+                    managedMedia.setMediaType(inputMedia.getMediaType());
+                    managedMedia.setCreator(inputMedia.getCreator());
+                    managedMedia.setStudio(inputMedia.getStudio());
+                    managedMedia.setDescription(inputMedia.getDescription());
+
+                    // Synchronize live iteration logging coordinates
+                    managedPart.setPartNumber(inputPart.getPartNumber());
+                    managedPart.setPartTitle(inputPart.getPartTitle());
+                    managedPart.setReleaseYear(inputPart.getReleaseYear());
+
+                    // CRITICAL FOR TRIGGER: Updating status from FINISHED -> IN_PROGRESS here
+                    // tells PostgreSQL to run its archive routines right before overwriting these values.
+                    managedPart.setStatus(inputPart.getStatus());
+                    managedPart.setRating(inputPart.getRating());
+                    managedPart.setStartedAt(inputPart.getStartedAt());
+                    managedPart.setFinishedAt(inputPart.getFinishedAt());
+                    managedPart.setNotes(inputPart.getNotes());
+
+                    // Persist live operational values
+                    session.merge(managedPart);
+
+                    // Commit Transaction -> Database triggers execute right here!
+                    tx.commit();
+
+                    // Flush and clear cache to maintain synchronization with server automation states
+                    session.clear();
+
+                    LOG.info("Tracking transaction committed. Trigger completed downstream log archiving successfully.");
+                    lblStatusMessage.setText("Log entry variations updated successfully.");
+
+                    // Re-hydrate application interfaces with updated tracking configurations
+                    refreshData();
+
+                } catch (Exception ex) {
+                    LOG.error("Critical issue committing live update configuration profile", ex);
+                    lblStatusMessage.setText("Database update failed! Check data integrity restrictions.");
+                }
+            }
+        } catch (IOException e) {
+            LOG.error("Failed to present layout component sequence via dialog scene engine", e);
+            lblStatusMessage.setText("Error: Failed to display editing modal window!");
         }
     }
 }

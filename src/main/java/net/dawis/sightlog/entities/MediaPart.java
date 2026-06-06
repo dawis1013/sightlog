@@ -3,8 +3,6 @@ package net.dawis.sightlog.entities;
 import jakarta.persistence.*;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
 @Table(name = "media_part", uniqueConstraints = @UniqueConstraint(columnNames = {"media_id", "part_number"}))
@@ -44,9 +42,6 @@ public class MediaPart {
 
     @Version
     private int version;
-
-    @OneToMany(mappedBy = "mediaPart", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<PartRewatch> rewatches = new ArrayList<>();
 
     // getters, setters
 
@@ -128,14 +123,6 @@ public class MediaPart {
 
     public void setNotes(String notes) {
         this.notes = notes;
-    }
-
-    public List<PartRewatch> getRewatches() {
-        return rewatches;
-    }
-
-    public void setRewatches(List<PartRewatch> rewatches) {
-        this.rewatches = rewatches;
     }
 
     public int getVersion() {

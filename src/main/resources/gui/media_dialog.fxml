@@ -15,7 +15,7 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-<DialogPane prefWidth="500.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1"
+<DialogPane prefWidth="500.0" stylesheets="@style.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="net.dawis.sightlog.gui.MediaDialogController">
     <content>
         <ScrollPane fitToWidth="true" hbarPolicy="NEVER" maxHeight="560.0"

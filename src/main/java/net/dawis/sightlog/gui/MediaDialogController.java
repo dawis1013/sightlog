@@ -4,9 +4,13 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 import net.dawis.sightlog.entities.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public class MediaDialogController {
+    //TODO log media dialog controller
+    private static final Logger LOG = LoggerFactory.getLogger(MediaDialogController.class);
 
     @FXML private VBox mediaSection;
     @FXML private TextField txtMediaTitle, txtMediaCreator, txtMediaStudio;
@@ -145,5 +149,39 @@ public class MediaDialogController {
         part.setStartedAt(dpPartStarted.getValue());
         part.setFinishedAt(dpPartFinished.getValue());
         return part;
+    }
+
+    /**
+     * Pre-populates the dialog fields with an existing log configuration for editing.
+     * @param part The existing tracking record fetched from the database layer.
+     */
+    public void populateFields(MediaPart part) {
+        if (part == null) return;
+
+        Media media = part.getMedia();
+
+        // 1. Populate top-level Media form section
+        txtMediaTitle.setText(media.getTitle());
+        cmbMediaType.setValue(media.getMediaType());
+        txtMediaCreator.setText(media.getCreator() != null ? media.getCreator() : "");
+        txtMediaStudio.setText(media.getStudio() != null ? media.getStudio() : "");
+        txtMediaDesc.setText(media.getDescription() != null ? media.getDescription() : "");
+
+        // 2. Populate tracking segment partition metrics
+        txtPartNumber.setText(String.valueOf(part.getPartNumber()));
+        txtPartTitle.setText(part.getPartTitle() != null ? part.getPartTitle() : "");
+        txtPartYear.setText(part.getReleaseYear() != null ? String.valueOf(part.getReleaseYear()) : "");
+        cmbPartStatus.setValue(part.getStatus());
+
+        // Populate rating text safely
+        if (part.getRating() != null) {
+            txtPartRating.setText(String.valueOf(part.getRating()));
+        } else {
+            txtPartRating.setText("");
+        }
+
+        dpPartStarted.setValue(part.getStartedAt());
+        dpPartFinished.setValue(part.getFinishedAt());
+        txtPartNotes.setText(part.getNotes() != null ? part.getNotes() : "");
     }
 }
