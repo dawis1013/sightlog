@@ -4,6 +4,9 @@ import jakarta.persistence.*;
 
 import java.time.LocalDate;
 
+/**
+ * Represents a rewatch or reread event for a specific media part.
+ */
 @Entity
 @Table(name = "part_rewatch")
 public class PartRewatch {

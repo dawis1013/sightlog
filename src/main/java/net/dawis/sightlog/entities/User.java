@@ -4,6 +4,10 @@ import jakarta.persistence.*;
 
 import java.time.OffsetDateTime;
 
+/**
+ * Represents a user of the SightLog application.
+ * Manages user credentials and account metadata.
+ */
 @Entity
 @Table(name = "users")
 public class User {
@@ -12,7 +16,7 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(unique = true, nullable = false)
     private String username;
 
     @Column(name = "password_hash", nullable = false)

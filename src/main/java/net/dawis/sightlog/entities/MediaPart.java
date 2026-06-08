@@ -4,6 +4,10 @@ import jakarta.persistence.*;
 
 import java.time.LocalDate;
 
+/**
+ * Represents a specific part, volume, or season of a media title.
+ * Tracks progress, status, and ratings for individual segments of a media entry.
+ */
 @Entity
 @Table(name = "media_part", uniqueConstraints = @UniqueConstraint(columnNames = {"media_id", "part_number"}))
 public class MediaPart {

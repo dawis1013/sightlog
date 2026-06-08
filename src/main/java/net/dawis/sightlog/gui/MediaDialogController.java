@@ -8,8 +8,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
+/**
+ * Controller for the Media Dialog.
+ * Handles adding and editing media titles and their parts.
+ */
 public class MediaDialogController {
-    //TODO log media dialog controller
     private static final Logger LOG = LoggerFactory.getLogger(MediaDialogController.class);
 
     @FXML private VBox mediaSection;
@@ -22,8 +25,12 @@ public class MediaDialogController {
     @FXML private DatePicker dpPartStarted, dpPartFinished;
     @FXML private TextArea txtPartNotes;
 
+    /**
+     * Initializes the controller. Sets up data entry masks and status-based rating locking.
+     */
     @FXML
     public void initialize() {
+        LOG.debug("Initializing MediaDialogController...");
         // Hydrate configuration option lists with core domain enums
         cmbMediaType.getItems().setAll(MediaType.values());
         cmbPartStatus.getItems().setAll(Status.values());
@@ -52,10 +59,12 @@ public class MediaDialogController {
     }
 
     /**
-     * Toggles layout structures based on selection criteria
+     * Toggles layout structures based on whether we are adding a new media or a part to existing media.
+     * @param selection The existing media selection, or null if creating new media.
      */
     public void setContext(Media selection) {
         if (selection != null) {
+            LOG.debug("Setting context for existing media: {}", selection.getTitle());
             // Rule: Collapse root fields when linking elements onto an existing parent record
             mediaSection.setVisible(false);
             mediaSection.setManaged(false);
@@ -64,6 +73,7 @@ public class MediaDialogController {
             int nextIncrementalStep = (selection.getParts() != null) ? selection.getParts().size() + 1 : 1;
             txtPartNumber.setText(String.valueOf(nextIncrementalStep));
         } else {
+            LOG.debug("Setting context for new media entry.");
             mediaSection.setVisible(true);
             mediaSection.setManaged(true);
             txtPartNumber.setText("1");
@@ -72,6 +82,7 @@ public class MediaDialogController {
 
     /**
      * Enforces database rule-validation parameters before processing writes.
+     * @return true if input is valid, false otherwise.
      */
     public boolean isValidInput() {
         StringBuilder errorReport = new StringBuilder();
@@ -107,6 +118,7 @@ public class MediaDialogController {
         }
 
         if (!errorReport.isEmpty()) {
+            LOG.warn("Validation violation encountered in MediaDialog: {}", errorReport.toString().replace("\n", " "));
             Alert validationAlert = new Alert(Alert.AlertType.WARNING);
             validationAlert.setTitle("Validation Violation Encountered");
             validationAlert.setHeaderText("Missing or Invalid Field Criteria");
@@ -118,6 +130,10 @@ public class MediaDialogController {
         return true;
     }
 
+    /**
+     * Extracts Media entity data from the form.
+     * @return A new Media entity populated with form data.
+     */
     public Media getMediaInput() {
         Media target = new Media();
         target.setTitle(txtMediaTitle.getText().trim());
@@ -128,6 +144,10 @@ public class MediaDialogController {
         return target;
     }
 
+    /**
+     * Extracts MediaPart entity data from the form.
+     * @return A new MediaPart entity populated with form data.
+     */
     public MediaPart getMediaPartInput() {
         MediaPart part = new MediaPart();
         part.setPartNumber(Integer.parseInt(txtPartNumber.getText().trim()));
@@ -157,6 +177,7 @@ public class MediaDialogController {
      */
     public void populateFields(MediaPart part) {
         if (part == null) return;
+        LOG.debug("Populating dialog fields for part ID: {}", part.getId());
 
         Media media = part.getMedia();
 

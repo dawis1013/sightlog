@@ -27,6 +27,10 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Main controller for the application's dashboard.
+ * Manages the media library display, filtering, and interaction with media/parts.
+ */
 public class MainController {
     private static final Logger LOG = LoggerFactory.getLogger(MainController.class);
 
@@ -60,6 +64,9 @@ public class MainController {
     private final ObservableList<Media> mediaOverviewList = FXCollections.observableArrayList();
     private final ObservableList<MediaPart> mediaPartsList = FXCollections.observableArrayList();
 
+    /**
+     * Initializes the controller. Sets up tables, listeners, and performs initial data load.
+     */
     @FXML
     public void initialize() {
         LOG.info("Initializing MainController...");
@@ -71,6 +78,17 @@ public class MainController {
         tblMediaOverview.setItems(mediaOverviewList);
         tblMediaParts.setItems(mediaPartsList);
 
+        setupTableListeners();
+        setupButtonActions();
+
+        // Initial Data Load on Startup
+        refreshData();
+    }
+
+    /**
+     * Configures selection and click listeners for the tables.
+     */
+    private void setupTableListeners() {
         // Master-Detail selection listener: Update right table when left row is clicked
         tblMediaOverview.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
             mediaPartsList.clear();
@@ -80,6 +98,7 @@ public class MainController {
             }
         });
 
+        // Clear selection when clicking empty space in Overview table
         tblMediaOverview.setOnMouseClicked(event -> {
             Node target = (Node) event.getTarget();
             while (target != null && target != tblMediaOverview) {
@@ -92,6 +111,7 @@ public class MainController {
             mediaPartsList.clear();
         });
 
+        // Clear selection when clicking empty space in Parts table
         tblMediaParts.setOnMouseClicked(event -> {
             Node target = (Node) event.getTarget();
             while (target != null && target != tblMediaParts) {
@@ -114,21 +134,21 @@ public class MainController {
             });
             return row;
         });
+    }
 
-        // Wire up button actions
+    /**
+     * Configures actions for the top bar buttons.
+     */
+    private void setupButtonActions() {
         btnRefresh.setOnAction(event -> refreshData());
 
         // Explicit action routing based on button context
         btnAddMedia.setOnAction(event -> handleOpenDialogAction(true));
         btnAddPart.setOnAction(event -> handleOpenDialogAction(false));
-
-        // Initial Data Load on Startup
-        refreshData();
     }
 
     /**
-     * Maps plain fields and dynamically calculates aggregates for the Left Overview Table
-     * mirroring the logic of the database's `media_overview` view.
+     * Maps plain fields and dynamically calculates aggregates for the Left Overview Table.
      */
     private void setupOverviewTableColumns() {
         colMediaTitle.setCellValueFactory(new PropertyValueFactory<>("title"));
@@ -172,7 +192,7 @@ public class MainController {
                     .average()
                     .orElse(-1.0);
 
-            if (avg == -1.0) return new SimpleObjectProperty<>(null); // Matches SQL view NULL output
+            if (avg == -1.0) return new SimpleObjectProperty<>(null); 
             return new SimpleDoubleProperty(Math.round(avg * 100.0) / 100.0).asObject();
         });
     }
@@ -202,8 +222,9 @@ public class MainController {
 
         User currentUser = UserSession.getCurrentUser();
         if (currentUser == null) {
-            LOG.error("No active user session found");
+            LOG.error("No active user session found during refresh.");
             lblStatusMessage.setText("No active user session found");
+            return;
         }
 
         try (Session session = DatabaseSession.open()) {
@@ -228,20 +249,21 @@ public class MainController {
             lblStatusMessage.setText("Data loaded successfully. Total Titles: " + mediaList.size());
             LOG.info("Successfully fetched {} media roots.", mediaList.size());
         } catch (Exception e) {
-            LOG.error("Failed to load data from database.", e);
+            LOG.error("Failed to load data from database: {}", e.getMessage());
             lblStatusMessage.setText("Error loading data from database!");
         }
     }
 
     /**
-     * Evaluates active UI selection models to open either a fresh Media form
-     * or append a new child Part to an existing tracked media profile.
+     * Opens the add/edit dialog for Media or MediaPart.
+     * @param isBrandNewMedia true if adding a new Media, false if adding a part to selected Media.
      */
     private void handleOpenDialogAction(boolean isBrandNewMedia) {
         Media selectedMedia = tblMediaOverview.getSelectionModel().getSelectedItem();
 
         // Guard Clause: Prevent exceptions if user attempts to add a part with no root selection active
         if (!isBrandNewMedia && selectedMedia == null) {
+            LOG.warn("Add Part attempted without selecting a Media entry.");
             Alert alert = new Alert(Alert.AlertType.WARNING);
             alert.setTitle("Selection Required");
             alert.setHeaderText("No Media Title Selected");
@@ -274,17 +296,21 @@ public class MainController {
                 }
             }
         } catch (IOException e) {
-            LOG.error("Failed to accurately display input wizard dialog frame", e);
+            LOG.error("Failed to display input wizard dialog: {}", e.getMessage());
+            lblStatusMessage.setText("Error: Failed to display input dialog.");
         }
     }
 
     /**
-     * Implements a transactional workflow mapping form inputs to relational backend database entities.
+     * Persists a new Media or MediaPart entry to the database.
+     * @param controller The dialog controller containing the input data.
+     * @param selectedMedia The parent Media if adding a part, null if adding new Media.
      */
     private void saveNewFormEntry(MediaDialogController controller, Media selectedMedia) {
         User currentUser = UserSession.getCurrentUser();
         if (currentUser == null) {
             LOG.error("Session execution terminated: No active context user authenticated");
+            lblStatusMessage.setText("Error: No active user session.");
             return;
         }
 
@@ -318,11 +344,15 @@ public class MainController {
             tx.commit();
             lblStatusMessage.setText("Log database entry processed successfully!");
         } catch (Exception e) {
-            LOG.error("Critical error encountered writing new logging configurations to database layer", e);
-            lblStatusMessage.setText("Database write failure! Integrity constraint violated.");
+            LOG.error("Critical error writing to database: {}", e.getMessage());
+            lblStatusMessage.setText("Database write failure! Data integrity error.");
         }
     }
 
+    /**
+     * Handles editing an existing MediaPart.
+     * @param selectedPart The MediaPart to edit.
+     */
     private void handleEditMediaPart(MediaPart selectedPart) {
         if (selectedPart == null) return;
 
@@ -366,8 +396,6 @@ public class MainController {
                     managedPart.setPartTitle(inputPart.getPartTitle());
                     managedPart.setReleaseYear(inputPart.getReleaseYear());
 
-                    // CRITICAL FOR TRIGGER: Updating status from FINISHED -> IN_PROGRESS here
-                    // tells PostgreSQL to run its archive routines right before overwriting these values.
                     managedPart.setStatus(inputPart.getStatus());
                     managedPart.setRating(inputPart.getRating());
                     managedPart.setStartedAt(inputPart.getStartedAt());
@@ -377,25 +405,21 @@ public class MainController {
                     // Persist live operational values
                     session.merge(managedPart);
 
-                    // Commit Transaction -> Database triggers execute right here!
                     tx.commit();
-
-                    // Flush and clear cache to maintain synchronization with server automation states
                     session.clear();
 
-                    LOG.info("Tracking transaction committed. Trigger completed downstream log archiving successfully.");
+                    LOG.info("Tracking transaction committed for part ID: {}", managedPart.getId());
                     lblStatusMessage.setText("Log entry variations updated successfully.");
 
-                    // Re-hydrate application interfaces with updated tracking configurations
                     refreshData();
 
                 } catch (Exception ex) {
-                    LOG.error("Critical issue committing live update configuration profile", ex);
-                    lblStatusMessage.setText("Database update failed! Check data integrity restrictions.");
+                    LOG.error("Critical issue committing live update: {}", ex.getMessage());
+                    lblStatusMessage.setText("Database update failed! Data integrity error.");
                 }
             }
         } catch (IOException e) {
-            LOG.error("Failed to present layout component sequence via dialog scene engine", e);
+            LOG.error("Failed to display editing dialog: {}", e.getMessage());
             lblStatusMessage.setText("Error: Failed to display editing modal window!");
         }
     }

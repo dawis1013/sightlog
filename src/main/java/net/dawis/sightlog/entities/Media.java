@@ -5,6 +5,10 @@ import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Represents a media title (e.g., Book, Movie, Anime) tracked by a user.
+ * Serves as the root entity for tracking individual parts or volumes.
+ */
 @Entity
 @Table(name = "media")
 public class Media {

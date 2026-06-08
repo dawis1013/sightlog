@@ -1,5 +1,6 @@
 package net.dawis.sightlog.gui;
 
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -21,6 +22,10 @@ import org.slf4j.LoggerFactory;
 
 import java.time.OffsetDateTime;
 
+/**
+ * Controller for the Registration screen.
+ * Handles new user account creation.
+ */
 public class RegisterController {
     private static final Logger LOG = LoggerFactory.getLogger(RegisterController.class);
 
@@ -28,6 +33,11 @@ public class RegisterController {
     @FXML private PasswordField passwordField;
     @FXML private Label errorLabel;
 
+    /**
+     * Handles the registration submission.
+     * Validates input and persists the new user to the database.
+     * @param actionEvent The event triggering this action.
+     */
     @FXML
     public void handleRegisterSubmit(ActionEvent actionEvent) {
         String username = usernameField.getText().trim();
@@ -69,7 +79,8 @@ public class RegisterController {
             tx.commit();
         } catch (Exception e) {
             if (tx != null && tx.isActive()) tx.rollback();
-            LOG.error("Database connection failed during processing.", e);
+            LOG.error("Database error during registration: {}", e.getMessage());
+            showUserError("Registration failed. Database error.");
             return;
         }
 
@@ -77,6 +88,10 @@ public class RegisterController {
         handleBackToLogin(actionEvent);
     }
 
+    /**
+     * Transitions the UI back to the login screen.
+     * @param event The event triggering this action.
+     */
     @FXML
     private void handleBackToLogin(ActionEvent event) {
         try {
@@ -87,24 +102,36 @@ public class RegisterController {
             stage.setScene(scene);
             stage.show();
         } catch (Exception e) {
-            LOG.error("Failed to transition back to Login Scene view.", e);
+            LOG.error("Failed to transition back to Login Scene view: {}", e.getMessage());
         }
     }
 
+    /**
+     * Minimizes the application window.
+     * @param event The event triggering this action.
+     */
     @FXML
     public void handleMinimizeWindow(ActionEvent event) {
         Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
         stage.setIconified(true);
     }
 
+    /**
+     * Closes the application.
+     * @param event The event triggering this action.
+     */
     @FXML
     public void handleCloseWindow(ActionEvent event) {
         LOG.info("Application terminating...");
-        System.exit(0);
+        Platform.exit();
     }
 
+    /**
+     * Displays an error message to the user and logs it.
+     * @param msg The message to display.
+     */
     private void showUserError(String msg) {
-        LOG.info(msg);
+        LOG.info("Registration error displayed: {}", msg);
         errorLabel.setText(msg);
     }
 }

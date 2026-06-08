@@ -16,17 +16,30 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
+/**
+ * Manages the Hibernate SessionFactory and provides access to database sessions.
+ */
 public class DatabaseSession {
     private static final Logger LOG = LoggerFactory.getLogger(DatabaseSession.class);
 
     private static final SessionFactory SESSION_FACTORY = buildSessionFactory();
 
+    /**
+     * Initializes the Hibernate SessionFactory using configuration from app.properties.
+     * @return A configured SessionFactory instance.
+     * @throws ExceptionInInitializerError if configuration fails or app.properties is missing.
+     */
     private static SessionFactory buildSessionFactory() {
         Properties props = new Properties();
 
         try (InputStream input = DatabaseSession.class
                 .getClassLoader()
                 .getResourceAsStream("app.properties")) {
+
+            if (input == null) {
+                LOG.error("Configuration file 'app.properties' not found on classpath.");
+                throw new IOException("app.properties not found");
+            }
 
             props.load(input);
 
@@ -43,17 +56,25 @@ public class DatabaseSession {
             return sources.buildMetadata().buildSessionFactory();
 
         } catch (IOException e) {
-            throw new ExceptionInInitializerError(e);
+            LOG.error("Failed to initialize database session factory: {}", e.getMessage());
+            throw new ExceptionInInitializerError("Could not initialize DatabaseSession: " + e.getMessage());
         }
     }
 
+    /**
+     * Opens a new Hibernate session.
+     * @return A new Session object.
+     */
     public static Session open() {
         LOG.debug("DB session opened.");
         return SESSION_FACTORY.openSession();
     }
 
+    /**
+     * Shuts down the SessionFactory and releases all resources.
+     */
     public static void shutdown() {
-        LOG.debug("DB session closed");
+        LOG.info("Shutting down DB session factory.");
         SESSION_FACTORY.close();
     }
 }
