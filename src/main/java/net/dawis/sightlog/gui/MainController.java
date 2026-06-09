@@ -8,10 +8,17 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Insets;
 import javafx.scene.Node;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
+import javafx.stage.Stage;
 import net.dawis.sightlog.datahandling.DatabaseSession;
+import net.dawis.sightlog.datahandling.PasswordUtil;
 import net.dawis.sightlog.datahandling.UserSession;
 import net.dawis.sightlog.entities.Media;
 import net.dawis.sightlog.entities.MediaPart;
@@ -24,6 +31,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 
@@ -35,7 +43,7 @@ public class MainController {
     private static final Logger LOG = LoggerFactory.getLogger(MainController.class);
 
     // Top Action Bar
-    @FXML private Button btnAddMedia, btnAddPart, btnRefresh;
+    @FXML private Button btnAddMedia, btnAddPart, btnRefresh, btnDeleteMedia, btnAccount;
 
     // Left Panel: Media Overview Table
     @FXML private TableView<Media> tblMediaOverview;
@@ -145,6 +153,10 @@ public class MainController {
         // Explicit action routing based on button context
         btnAddMedia.setOnAction(event -> handleOpenDialogAction(true));
         btnAddPart.setOnAction(event -> handleOpenDialogAction(false));
+
+        btnDeleteMedia.setOnAction(event -> handleDeleteAction());
+
+        btnAccount.setOnAction(event -> showAccountSettings());
     }
 
     /**
@@ -421,6 +433,323 @@ public class MainController {
         } catch (IOException e) {
             LOG.error("Failed to display editing dialog: {}", e.getMessage());
             lblStatusMessage.setText("Error: Failed to display editing modal window!");
+        }
+    }
+
+    /**
+     * Orchestrates the deletion framework strategy based on explicit user table selection coordinates.
+     */
+    private void handleDeleteAction() {
+        MediaPart selectedPart = tblMediaParts.getSelectionModel().getSelectedItem();
+        Media selectedMedia = tblMediaOverview.getSelectionModel().getSelectedItem();
+
+        if (selectedPart != null) {
+            LOG.info("Delete trigger invoked. Found highlighted active track part index context ID: {}.", selectedPart.getId());
+
+            // Step 1: Initialize Choice Window Scope Alert Framework Context Definition
+            Alert scopeAlert = new Alert(Alert.AlertType.CONFIRMATION);
+            scopeAlert.setTitle("Selection Purge Parameters");
+            scopeAlert.setHeaderText("Choose Deletion Strategy Boundary Range");
+            scopeAlert.setContentText("An entry item segment row is currently highlighted on the partition tracker. Would you like to target this single subset log, or delete the entire root entity profile?");
+
+            ButtonType btnDeleteOnlyPart = new ButtonType("Purge Selected Part Only");
+            ButtonType btnDeleteWholeMedia = new ButtonType("Purge Entire Title Root");
+            ButtonType btnCancelAction = new ButtonType("Cancel Operation", ButtonBar.ButtonData.CANCEL_CLOSE);
+
+            scopeAlert.getButtonTypes().setAll(btnDeleteOnlyPart, btnDeleteWholeMedia, btnCancelAction);
+
+            Optional<ButtonType> scopeResponse = scopeAlert.showAndWait();
+            if (scopeResponse.isEmpty() || scopeResponse.get() == btnCancelAction) {
+                LOG.info("Scope selection aborted by developer/user boundary interface interaction action.");
+                return;
+            }
+
+            // Step 2: Route operational control paths downstream to dedicated explicit confirmation alert loops
+            if (scopeResponse.get() == btnDeleteOnlyPart) {
+                processPartDeletion(selectedPart);
+            } else if (scopeResponse.get() == btnDeleteWholeMedia) {
+                processMediaDeletion(selectedPart.getMedia());
+            }
+
+        } else if (selectedMedia != null) {
+            LOG.info("Delete trigger invoked. No subset parts found, shifting scope default to parent root entity ID: {}.", selectedMedia.getId());
+            processMediaDeletion(selectedMedia);
+        } else {
+            LOG.warn("Delete operational callback invoked, but active model evaluation coordinates returned no selected reference context.");
+            lblStatusMessage.setText("Warning: Please select a valid target inside tracking charts to run standard delete operations.");
+        }
+    }
+
+    /**
+     * Executes explicit confirmation popup validation loops and purges a single track partition entity item.
+     */
+    private void processPartDeletion(MediaPart targetPart) {
+        Alert confirmAlert = new Alert(Alert.AlertType.WARNING);
+        confirmAlert.setTitle("Verify Destruction Event Bounds");
+        confirmAlert.setHeaderText("Confirm Destruction: Tracking Segment Row Subset");
+        confirmAlert.setContentText("Are you entirely sure you want to drop tracking subset entry part number "
+                + targetPart.getPartNumber() + " ('" + (targetPart.getPartTitle() != null ? targetPart.getPartTitle() : "Untitled")
+                + "')?");
+
+        Optional<ButtonType> result = confirmAlert.showAndWait();
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            LOG.info("Destructive signature verified. Committing transaction drop request for segment element index ID: {}", targetPart.getId());
+
+            try (Session session = DatabaseSession.open()) {
+                Transaction tx = session.beginTransaction();
+
+                MediaPart managedPart = session.find(MediaPart.class, targetPart.getId());
+                if (managedPart != null) {
+                    Media parentMedia = managedPart.getMedia();
+                    if (parentMedia != null) {
+                        parentMedia.getParts().remove(managedPart);
+                    }
+                    session.remove(managedPart);
+                }
+
+                tx.commit();
+                lblStatusMessage.setText("Tracking subset item dropped from database.");
+
+                tblMediaParts.getSelectionModel().clearSelection();
+                refreshData();
+            } catch (Exception ex) {
+                LOG.error("Failed to commit drop sequence parameters inside active relational tree tracking records", ex);
+                lblStatusMessage.setText("Error: Transaction integrity aborted single segment dropping routine.");
+            }
+        }
+    }
+
+    /**
+     * Executes explicit confirmation validation loops and drops the root parent entity along with all cascades.
+     */
+    private void processMediaDeletion(Media targetMedia) {
+        Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmAlert.setTitle("Verify Structural Failure Risks");
+        confirmAlert.setHeaderText("CRITICAL ACTION: Drop Title Base Node Frame Root Completely");
+        confirmAlert.setContentText("Are you entirely sure you want to permanently drop the core tracking root entry '"
+                + targetMedia.getTitle() + "' along with all subordinate tracking variations and logged background internal metrics?");
+
+        Optional<ButtonType> result = confirmAlert.showAndWait();
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            LOG.info("Destructive master root authorization sequence cleared. Drop transactional parameters initiated for Parent ID: {}", targetMedia.getId());
+
+            try (Session session = DatabaseSession.open()) {
+                Transaction tx = session.beginTransaction();
+
+                Media managedMedia = session.find(Media.class, targetMedia.getId());
+                if (managedMedia != null) {
+                    session.remove(managedMedia);
+                }
+
+                tx.commit();
+                lblStatusMessage.setText("Master core title framework drop successfully compiled.");
+
+                tblMediaOverview.getSelectionModel().clearSelection();
+                tblMediaParts.getSelectionModel().clearSelection();
+                refreshData();
+            } catch (Exception ex) {
+                LOG.error("Failed to wipe relational node reference tree coordinates out of targeted data clusters", ex);
+                lblStatusMessage.setText("Error: Failed to process clean context removal parameters.");
+            }
+        }
+    }
+
+    /**
+     * Spawns an interactive Account Settings view modal container to review user profile information
+     * and route credential changes, logouts, or permanent database profile deletions.
+     */
+    private void showAccountSettings() {
+        LOG.info("Account properties management interface requested.");
+        User currentUser = UserSession.getCurrentUser();
+        if (currentUser == null) {
+            LOG.error("Account management request rejected: Missing authenticated active user session context.");
+            lblStatusMessage.setText("Error: Session expired. Please log in again.");
+            return;
+        }
+
+        // Create programmatic layout containers to isolate dialogue constraints cleanly
+        Dialog<Void> accountDialog = new Dialog<>();
+        accountDialog.setTitle("Account Settings");
+        accountDialog.setHeaderText("Manage Profile Credentials & Active Sessions");
+
+        GridPane grid = new GridPane();
+        grid.setHgap(12);
+        grid.setVgap(12);
+        grid.setPadding(new Insets(20, 40, 20, 20));
+
+        grid.add(new Label("Active User:"), 0, 0);
+        Label lblUser = new Label(currentUser.getUsername());
+        lblUser.setStyle("-fx-font-weight: bold; -fx-text-fill: #6366f1;");
+        grid.add(lblUser, 1, 0);
+
+        grid.add(new Label("Created On:"), 0, 1);
+        String createdStr = "N/A";
+        if (currentUser.getCreatedAt() != null) {
+            try {
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                createdStr = currentUser.getCreatedAt().format(formatter);
+            } catch (Exception e) {
+                createdStr = currentUser.getCreatedAt().toString();
+            }
+        }
+        grid.add(new Label(createdStr), 1, 1);
+
+        Button btnChangePassword = new Button("🔑 Change Password");
+        Button btnLogoutAction = new Button("🚪 Log Out Session");
+        Button btnDeleteAccount = new Button("⚠️ Delete Account Permanently");
+
+        btnChangePassword.setMaxWidth(Double.MAX_VALUE);
+        btnLogoutAction.setMaxWidth(Double.MAX_VALUE);
+        btnDeleteAccount.setMaxWidth(Double.MAX_VALUE);
+        btnDeleteAccount.setStyle("-fx-text-fill: #ef4444; -fx-border-color: #ef4444;");
+
+        VBox buttonContainer = new VBox(10, btnChangePassword, btnLogoutAction, btnDeleteAccount);
+        buttonContainer.setPadding(new Insets(15, 0, 0, 0));
+        grid.add(buttonContainer, 0, 2, 2, 1);
+
+        accountDialog.getDialogPane().setContent(grid);
+        accountDialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
+
+        // Sub-Action A: Passphrase Correction Matrix Sub-dialog
+        btnChangePassword.setOnAction(e -> {
+            LOG.debug("Invoking credentials adjustment sub-modal interface.");
+            Dialog<ButtonType> pwDialog = new Dialog<>();
+            pwDialog.setTitle("Change Password");
+            pwDialog.setHeaderText("Modify Secure Account Access Passphrase");
+
+            GridPane pwGrid = new GridPane();
+            pwGrid.setHgap(10);
+            pwGrid.setVgap(10);
+            pwGrid.setPadding(new Insets(20, 30, 20, 20));
+
+            PasswordField txtCurrentPassword = new PasswordField();
+            txtCurrentPassword.setPromptText("Enter current password...");
+            PasswordField txtNewPassword = new PasswordField();
+            txtNewPassword.setPromptText("Enter new secure password...");
+
+            pwGrid.add(new Label("Current Password:"), 0, 0);
+            pwGrid.add(txtCurrentPassword, 1, 0);
+            pwGrid.add(new Label("New Password:"), 0, 1);
+            pwGrid.add(txtNewPassword, 1, 1);
+
+            pwDialog.getDialogPane().setContent(pwGrid);
+            pwDialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+            Optional<ButtonType> pwResult = pwDialog.showAndWait();
+            if (pwResult.isPresent() && pwResult.get() == ButtonType.OK) {
+                String currentPw = txtCurrentPassword.getText() != null ? txtCurrentPassword.getText().trim() : "";
+                String newPw = txtNewPassword.getText() != null ? txtNewPassword.getText().trim() : "";
+
+                if (currentPw.isEmpty() || newPw.isEmpty()) {
+                    Alert validationAlert = new Alert(Alert.AlertType.ERROR, "Password inputs cannot be empty or pure whitespace spaces.", ButtonType.OK);
+                    validationAlert.showAndWait();
+                    return;
+                }
+
+                try (Session session = DatabaseSession.open()) {
+                    Transaction tx = session.beginTransaction();
+                    User managedUser = session.find(User.class, currentUser.getId());
+
+                    if (managedUser == null) {
+                        LOG.error("Database resolution mismatch: Logged in profile ID {} missing from tracking entries.", currentUser.getId());
+                        return;
+                    }
+
+                    // Security Matching verification context
+                    if (!PasswordUtil.checkPassword(currentPw, managedUser.getPwdHash())) {
+                        LOG.warn("Password change unauthorized: Current raw credentials mismatch for username '{}'.", managedUser.getUsername());
+                        Alert errorAlert = new Alert(Alert.AlertType.ERROR, "Authentication failed: The current password entered is incorrect.", ButtonType.OK);
+                        errorAlert.showAndWait();
+                        return;
+                    }
+
+                    managedUser.setPwdHash(PasswordUtil.hashPassword(newPw));
+                    session.merge(managedUser);
+                    tx.commit();
+
+                    LOG.info("Passphrase string successfully committed for User ID {}. Invalidating session state structures.", managedUser.getId());
+                    accountDialog.close();
+                    redirectToLogin();
+                } catch (Exception ex) {
+                    LOG.error("Hibernate error encountered committing password changes to persistence layers.", ex);
+                    lblStatusMessage.setText("Error: Database layer failed to save password change properties.");
+                }
+            }
+        });
+
+        // Sub-Action B: Session Extraction Action Route
+        btnLogoutAction.setOnAction(e -> {
+            LOG.info("User requested explicit application session log out.");
+            accountDialog.close();
+            redirectToLogin();
+        });
+
+        // Sub-Action C: Permanent Profile Destruction & Cascade Purging Routine Loop
+        btnDeleteAccount.setOnAction(e -> {
+            LOG.warn("Critical user account destruction script requested for active login session ID: {}", currentUser.getId());
+            Alert confirmDelete = new Alert(Alert.AlertType.CONFIRMATION);
+            confirmDelete.setTitle("Verify Structural Failure Risks");
+            confirmDelete.setHeaderText("CRITICAL INTERFACES COMMAND: Permanently Drop Profile Account Framework");
+            confirmDelete.setContentText("Are you entirely sure you want to permanently delete your user account profile? "
+                    + "This will instantly trigger cascaded clean removal iterations across all your tracked Media logs, subset partition layers, and history logs from database clusters. "
+                    + "This destructive operation cannot be reversed.");
+
+            Optional<ButtonType> deleteResult = confirmDelete.showAndWait();
+            if (deleteResult.isPresent() && deleteResult.get() == ButtonType.OK) {
+                LOG.info("Destructive authorization keys parsed successfully. Executing profile delete routines.");
+
+                try (Session session = DatabaseSession.open()) {
+                    Transaction tx = session.beginTransaction();
+
+                    // CRITICAL COMPLIANCE FIX: Iteratively pull and delete media objects to ensure Hibernate triggers Cascades on parts.
+                    List<Media> userMediaRoots = session.createQuery(
+                                    "FROM Media m WHERE m.user.id = :userId", Media.class)
+                            .setParameter("userId", currentUser.getId())
+                            .getResultList();
+
+                    LOG.debug("Purging {} owned media tracking trees linked to account context.", userMediaRoots.size());
+                    for (Media mediaRoot : userMediaRoots) {
+                        session.remove(mediaRoot);
+                    }
+
+                    User managedUser = session.find(User.class, currentUser.getId());
+                    if (managedUser != null) {
+                        session.remove(managedUser);
+                    }
+
+                    tx.commit();
+                    LOG.info("Account profile and associated metadata clusters successfully deleted from system records.");
+
+                    accountDialog.close();
+                    redirectToLogin();
+                } catch (Exception ex) {
+                    LOG.error("Critical issue handling atomic database user profile purging sequences.", ex);
+                    Alert crashAlert = new Alert(Alert.AlertType.ERROR, "System Error: Failed to cleanly drop account profiles due to database constraint boundaries.", ButtonType.OK);
+                    crashAlert.showAndWait();
+                }
+            }
+        });
+
+        accountDialog.showAndWait();
+    }
+
+    /**
+     * Executes clean container window invalidation and drops state elements before routing the frame back to the Login display graph.
+     */
+    private void redirectToLogin() {
+        try {
+            UserSession.logout();
+            Stage stage = (Stage) btnAccount.getScene().getWindow();
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/login_ui.fxml"));
+            Scene scene = new Scene(loader.load());
+            scene.setFill(Color.TRANSPARENT);
+            stage.setScene(scene);
+            stage.setTitle("Login");
+            stage.show();
+            LOG.info("Successfully routed active session back to login screen context view boundary.");
+        } catch (IOException e) {
+            LOG.error("Failed to redirect window scope to login page FXML layout structure.", e);
+            lblStatusMessage.setText("Error: Redirection to login screen failed.");
         }
     }
 }

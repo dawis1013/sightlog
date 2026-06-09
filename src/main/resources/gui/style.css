@@ -59,6 +59,13 @@
     -fx-text-fill: #a5b4fc;
     -fx-border-color: rgba(99, 102, 241, 0.4);
 }
+
+#btnDeleteMedia {
+    -fx-background-color: rgba(239, 68, 68, 0.15);
+    -fx-text-fill: #fca5a5;
+    -fx-border-color: rgba(239, 68, 68, 0.4);
+}
+
 #btnAddMedia:hover, #btnAddPart:hover {
     -fx-background-color: -primary-color;
     -fx-text-fill: #ffffff;
