@@ -1,5 +1,6 @@
 package net.dawis.sightlog.gui;
 
+import jakarta.persistence.OptimisticLockException;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -349,7 +350,7 @@ public class MainController {
 
                 // --- MANUAL CONCURRENCY CONTROL: Verify root version against initial selection ---
                 if (managedParent.getVersion() != selectedMedia.getVersion()) {
-                    throw new jakarta.persistence.OptimisticLockException("The Media title root has been modified by another session. Update aborted to prevent data corruption.");
+                    throw new OptimisticLockException("The Media title root has been modified by another session. Update aborted to prevent data corruption.");
                 }
 
                 newPart.setMedia(managedParent);
@@ -361,7 +362,7 @@ public class MainController {
 
             tx.commit();
             lblStatusMessage.setText("Log database entry processed successfully!");
-        } catch (jakarta.persistence.OptimisticLockException ole) {
+        } catch (OptimisticLockException ole) {
             LOG.warn("Concurrency violation during new part insertion: {}", ole.getMessage());
             showConcurrencyError();
         } catch (Exception e) {
@@ -403,10 +404,10 @@ public class MainController {
 
                     // --- MANUAL CONCURRENCY CONTROL: Verify current DB version against initial memory snapshot ---
                     if (managedPart.getVersion() != selectedPart.getVersion()) {
-                        throw new jakarta.persistence.OptimisticLockException("This tracking part has been modified by another session.");
+                        throw new OptimisticLockException("This tracking part has been modified by another session.");
                     }
                     if (managedMedia.getVersion() != selectedPart.getMedia().getVersion()) {
-                        throw new jakarta.persistence.OptimisticLockException("The parent Media title root has been modified by another session.");
+                        throw new OptimisticLockException("The parent Media title root has been modified by another session.");
                     }
 
                     // Extract modified payload values from screen fields
@@ -442,7 +443,7 @@ public class MainController {
 
                     refreshData();
 
-                } catch (jakarta.persistence.OptimisticLockException ole) {
+                } catch (OptimisticLockException ole) {
                     LOG.warn("Concurrency conflict detected during update: {}", ole.getMessage());
                     showConcurrencyError();
                     refreshData();
@@ -690,7 +691,7 @@ public class MainController {
 
                     // --- MANUAL CONCURRENCY CONTROL: Verify profile version against session snapshot ---
                     if (managedUser.getVersion() != currentUser.getVersion()) {
-                        throw new jakarta.persistence.OptimisticLockException("User profile metadata is outdated.");
+                        throw new OptimisticLockException("User profile metadata is outdated.");
                     }
 
                     // Security Matching verification context
@@ -708,7 +709,7 @@ public class MainController {
                     LOG.info("Passphrase string successfully committed for User ID {}. Invalidating session state structures.", managedUser.getId());
                     accountDialog.close();
                     redirectToLogin();
-                } catch (jakarta.persistence.OptimisticLockException ole) {
+                } catch (OptimisticLockException ole) {
                     LOG.warn("Concurrency violation during password update: {}", ole.getMessage());
                     Alert lockAlert = new Alert(Alert.AlertType.ERROR, "Account Update Failed: Your session data is outdated. Please log out and log back in to synchronize your profile.", ButtonType.OK);
                     lockAlert.showAndWait();

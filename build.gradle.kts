@@ -2,6 +2,7 @@ plugins {
     java
     id("application")
     id("org.openjfx.javafxplugin") version "0.1.0"
+    id("com.gradleup.shadow") version "8.3.5"
 }
 
 group = "net.dawis.sightlog"
@@ -14,7 +15,7 @@ java {
 }
 
 application {
-    mainClass.set("net.dawis.sightlog.App")
+    mainClass.set("net.dawis.sightlog.Main")
 }
 
 repositories {
@@ -47,6 +48,16 @@ dependencies {
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+}
+
+tasks.shadowJar {
+    archiveClassifier.set("fat")
+
+    mergeServiceFiles()
+
+    manifest {
+        attributes(mapOf("Main-Class" to "net.dawis.sightlog.Main"))
+    }
 }
 
 tasks.test {
