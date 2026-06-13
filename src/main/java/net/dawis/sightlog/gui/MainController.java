@@ -346,6 +346,12 @@ public class MainController {
 
                 // Re-fetch object scope inside active session boundary to eliminate detached state conflicts
                 Media managedParent = session.find(Media.class, selectedMedia.getId());
+
+                // --- MANUAL CONCURRENCY CONTROL: Verify root version against initial selection ---
+                if (managedParent.getVersion() != selectedMedia.getVersion()) {
+                    throw new jakarta.persistence.OptimisticLockException("The Media title root has been modified by another session. Update aborted to prevent data corruption.");
+                }
+
                 newPart.setMedia(managedParent);
                 managedParent.getParts().add(newPart);
 
@@ -355,6 +361,9 @@ public class MainController {
 
             tx.commit();
             lblStatusMessage.setText("Log database entry processed successfully!");
+        } catch (jakarta.persistence.OptimisticLockException ole) {
+            LOG.warn("Concurrency violation during new part insertion: {}", ole.getMessage());
+            showConcurrencyError();
         } catch (Exception e) {
             LOG.error("Critical error writing to database: {}", e.getMessage());
             lblStatusMessage.setText("Database write failure! Data integrity error.");
@@ -392,6 +401,14 @@ public class MainController {
                     MediaPart managedPart = session.find(MediaPart.class, selectedPart.getId());
                     Media managedMedia = managedPart.getMedia();
 
+                    // --- MANUAL CONCURRENCY CONTROL: Verify current DB version against initial memory snapshot ---
+                    if (managedPart.getVersion() != selectedPart.getVersion()) {
+                        throw new jakarta.persistence.OptimisticLockException("This tracking part has been modified by another session.");
+                    }
+                    if (managedMedia.getVersion() != selectedPart.getMedia().getVersion()) {
+                        throw new jakarta.persistence.OptimisticLockException("The parent Media title root has been modified by another session.");
+                    }
+
                     // Extract modified payload values from screen fields
                     Media inputMedia = controller.getMediaInput();
                     MediaPart inputPart = controller.getMediaPartInput();
@@ -425,6 +442,10 @@ public class MainController {
 
                     refreshData();
 
+                } catch (jakarta.persistence.OptimisticLockException ole) {
+                    LOG.warn("Concurrency conflict detected during update: {}", ole.getMessage());
+                    showConcurrencyError();
+                    refreshData();
                 } catch (Exception ex) {
                     LOG.error("Critical issue committing live update: {}", ex.getMessage());
                     lblStatusMessage.setText("Database update failed! Data integrity error.");
@@ -434,6 +455,18 @@ public class MainController {
             LOG.error("Failed to display editing dialog: {}", e.getMessage());
             lblStatusMessage.setText("Error: Failed to display editing modal window!");
         }
+    }
+
+    /**
+     * Displays a warning alert when a database concurrency conflict (optimistic lock failure) is detected.
+     */
+    private void showConcurrencyError() {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Concurrency Conflict Encountered");
+        alert.setHeaderText("Database record mismatch: Data Outdated");
+        alert.setContentText("The information you are trying to update has been modified by another session since you loaded it. \n\n"
+                + "Your changes have been aborted to prevent accidental data overwriting. The view will now refresh to show the latest data.");
+        alert.showAndWait();
     }
 
     /**
@@ -655,6 +688,11 @@ public class MainController {
                         return;
                     }
 
+                    // --- MANUAL CONCURRENCY CONTROL: Verify profile version against session snapshot ---
+                    if (managedUser.getVersion() != currentUser.getVersion()) {
+                        throw new jakarta.persistence.OptimisticLockException("User profile metadata is outdated.");
+                    }
+
                     // Security Matching verification context
                     if (!PasswordUtil.checkPassword(currentPw, managedUser.getPwdHash())) {
                         LOG.warn("Password change unauthorized: Current raw credentials mismatch for username '{}'.", managedUser.getUsername());
@@ -670,6 +708,10 @@ public class MainController {
                     LOG.info("Passphrase string successfully committed for User ID {}. Invalidating session state structures.", managedUser.getId());
                     accountDialog.close();
                     redirectToLogin();
+                } catch (jakarta.persistence.OptimisticLockException ole) {
+                    LOG.warn("Concurrency violation during password update: {}", ole.getMessage());
+                    Alert lockAlert = new Alert(Alert.AlertType.ERROR, "Account Update Failed: Your session data is outdated. Please log out and log back in to synchronize your profile.", ButtonType.OK);
+                    lockAlert.showAndWait();
                 } catch (Exception ex) {
                     LOG.error("Hibernate error encountered committing password changes to persistence layers.", ex);
                     lblStatusMessage.setText("Error: Database layer failed to save password change properties.");

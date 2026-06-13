@@ -25,6 +25,9 @@ public class User {
     @Column(name = "created_at")
     private OffsetDateTime createdAt;
 
+    @Version
+    private int version;
+
     public Long getId() {
         return id;
     }
@@ -51,5 +54,13 @@ public class User {
 
     public void setCreatedAt(OffsetDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public int getVersion() {
+        return version;
+    }
+
+    public void setVersion(int version) {
+        this.version = version;
     }
 }
