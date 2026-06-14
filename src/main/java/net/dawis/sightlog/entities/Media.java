@@ -36,7 +36,7 @@ public class Media {
     private int version;
 
     @OneToMany(mappedBy = "media", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<MediaPart> parts = new ArrayList<>();
+    private final List<MediaPart> parts = new ArrayList<>();
 
     // getters, setters
 
@@ -88,16 +88,8 @@ public class Media {
         return parts;
     }
 
-    public void setParts(List<MediaPart> parts) {
-        this.parts = parts;
-    }
-
     public int getVersion() {
         return version;
-    }
-
-    public void setVersion(int version) {
-        this.version = version;
     }
 
     public void setUser(User user) {

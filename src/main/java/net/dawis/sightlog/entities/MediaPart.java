@@ -53,10 +53,6 @@ public class MediaPart {
         return id;
     }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
-
     public Media getMedia() {
         return media;
     }
@@ -131,9 +127,5 @@ public class MediaPart {
 
     public int getVersion() {
         return version;
-    }
-
-    public void setVersion(int version) {
-        this.version = version;
     }
 }

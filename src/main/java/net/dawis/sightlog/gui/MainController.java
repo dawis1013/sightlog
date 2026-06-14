@@ -90,7 +90,6 @@ public class MainController {
         setupTableListeners();
         setupButtonActions();
 
-        // Initial Data Load on Startup
         refreshData();
     }
 
@@ -150,13 +149,9 @@ public class MainController {
      */
     private void setupButtonActions() {
         btnRefresh.setOnAction(event -> refreshData());
-
-        // Explicit action routing based on button context
         btnAddMedia.setOnAction(event -> handleOpenDialogAction(true));
         btnAddPart.setOnAction(event -> handleOpenDialogAction(false));
-
         btnDeleteMedia.setOnAction(event -> handleDeleteAction());
-
         btnAccount.setOnAction(event -> showAccountSettings());
     }
 
@@ -175,7 +170,7 @@ public class MainController {
         colMediaPartsCount.setCellValueFactory(cellData ->
                 new SimpleIntegerProperty(cellData.getValue().getParts() != null ? cellData.getValue().getParts().size() : 0).asObject());
 
-        // Aggregate View Logic: Status Calculation
+        // Aggregate: Status Calculation
         colMediaStatus.setCellValueFactory(cellData -> {
             List<MediaPart> parts = cellData.getValue().getParts();
             if (parts == null || parts.isEmpty()) {
@@ -193,7 +188,7 @@ public class MainController {
             return new SimpleStringProperty(Status.PLANNING.name());
         });
 
-        // Aggregate View Logic: Average Rating Calculation
+        // Aggregate: Average Rating Calculation
         colMediaAvgRating.setCellValueFactory(cellData -> {
             List<MediaPart> parts = cellData.getValue().getParts();
             if (parts == null || parts.isEmpty()) {
@@ -274,7 +269,7 @@ public class MainController {
     private void handleOpenDialogAction(boolean isBrandNewMedia) {
         Media selectedMedia = tblMediaOverview.getSelectionModel().getSelectedItem();
 
-        // Guard Clause: Prevent exceptions if user attempts to add a part with no root selection active
+        // Prevent exceptions if user attempts to add a part with no root selection active
         if (!isBrandNewMedia && selectedMedia == null) {
             LOG.warn("Add Part attempted without selecting a Media entry.");
             Alert alert = new Alert(Alert.AlertType.WARNING);
@@ -305,7 +300,7 @@ public class MainController {
             if (result.isPresent() && result.get() == ButtonType.OK) {
                 if (dialogController.isValidInput()) {
                     saveNewFormEntry(dialogController, isBrandNewMedia ? null : selectedMedia);
-                    refreshData(); // Synchronize live DB states back to presentation structures
+                    refreshData();
                 }
             }
         } catch (IOException e) {
@@ -331,7 +326,7 @@ public class MainController {
             Transaction tx = session.beginTransaction();
 
             if (selectedMedia == null) {
-                // Case A: Create completely new media tree parent alongside its initial base part element
+                // Create completely new media tree parent alongside its initial base part element
                 Media newMedia = controller.getMediaInput();
                 newMedia.setUser(currentUser);
 
@@ -342,13 +337,11 @@ public class MainController {
                 session.persist(newMedia);
                 LOG.info("Successfully registered core media title profile: {}", newMedia.getTitle());
             } else {
-                // Case B: Append tracking part segment to an existing parent node record
+                // Append tracking part segment to an existing parent node record
                 MediaPart newPart = controller.getMediaPartInput();
 
-                // Re-fetch object scope inside active session boundary to eliminate detached state conflicts
                 Media managedParent = session.find(Media.class, selectedMedia.getId());
 
-                // --- MANUAL CONCURRENCY CONTROL: Verify root version against initial selection ---
                 if (managedParent.getVersion() != selectedMedia.getVersion()) {
                     throw new OptimisticLockException("The Media title root has been modified by another session. Update aborted to prevent data corruption.");
                 }
@@ -379,15 +372,12 @@ public class MainController {
         if (selectedPart == null) return;
 
         try {
-            // 1. Load the existing layout dialog structure
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui/media_dialog.fxml"));
             DialogPane dialogPane = loader.load();
             MediaDialogController controller = loader.getController();
 
-            // 2. Inject active entity metadata properties directly into UI form
             controller.populateFields(selectedPart);
 
-            // 3. Build a modal presentation window context
             Dialog<ButtonType> dialog = new Dialog<>();
             dialog.setDialogPane(dialogPane);
             dialog.setTitle("Edit Tracking Partition - " + selectedPart.getMedia().getTitle());
@@ -402,7 +392,6 @@ public class MainController {
                     MediaPart managedPart = session.find(MediaPart.class, selectedPart.getId());
                     Media managedMedia = managedPart.getMedia();
 
-                    // --- MANUAL CONCURRENCY CONTROL: Verify current DB version against initial memory snapshot ---
                     if (managedPart.getVersion() != selectedPart.getVersion()) {
                         throw new OptimisticLockException("This tracking part has been modified by another session.");
                     }
@@ -480,7 +469,6 @@ public class MainController {
         if (selectedPart != null) {
             LOG.info("Delete trigger invoked. Found highlighted active track part index context ID: {}.", selectedPart.getId());
 
-            // Step 1: Initialize Choice Window Scope Alert Framework Context Definition
             Alert scopeAlert = new Alert(Alert.AlertType.CONFIRMATION);
             scopeAlert.setTitle("Selection Purge Parameters");
             scopeAlert.setHeaderText("Choose Deletion Strategy Boundary Range");
@@ -498,7 +486,6 @@ public class MainController {
                 return;
             }
 
-            // Step 2: Route operational control paths downstream to dedicated explicit confirmation alert loops
             if (scopeResponse.get() == btnDeleteOnlyPart) {
                 processPartDeletion(selectedPart);
             } else if (scopeResponse.get() == btnDeleteWholeMedia) {
@@ -601,7 +588,6 @@ public class MainController {
             return;
         }
 
-        // Create programmatic layout containers to isolate dialogue constraints cleanly
         Dialog<Void> accountDialog = new Dialog<>();
         accountDialog.setTitle("Account Settings");
         accountDialog.setHeaderText("Manage Profile Credentials & Active Sessions");
@@ -644,7 +630,7 @@ public class MainController {
         accountDialog.getDialogPane().setContent(grid);
         accountDialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
 
-        // Sub-Action A: Passphrase Correction Matrix Sub-dialog
+        // Passphrase Correction Matrix Sub-dialog
         btnChangePassword.setOnAction(e -> {
             LOG.debug("Invoking credentials adjustment sub-modal interface.");
             Dialog<ButtonType> pwDialog = new Dialog<>();
@@ -689,12 +675,10 @@ public class MainController {
                         return;
                     }
 
-                    // --- MANUAL CONCURRENCY CONTROL: Verify profile version against session snapshot ---
                     if (managedUser.getVersion() != currentUser.getVersion()) {
                         throw new OptimisticLockException("User profile metadata is outdated.");
                     }
 
-                    // Security Matching verification context
                     if (!PasswordUtil.checkPassword(currentPw, managedUser.getPwdHash())) {
                         LOG.warn("Password change unauthorized: Current raw credentials mismatch for username '{}'.", managedUser.getUsername());
                         Alert errorAlert = new Alert(Alert.AlertType.ERROR, "Authentication failed: The current password entered is incorrect.", ButtonType.OK);
@@ -720,14 +704,14 @@ public class MainController {
             }
         });
 
-        // Sub-Action B: Session Extraction Action Route
+        // Session Extraction Action Route
         btnLogoutAction.setOnAction(e -> {
             LOG.info("User requested explicit application session log out.");
             accountDialog.close();
             redirectToLogin();
         });
 
-        // Sub-Action C: Permanent Profile Destruction & Cascade Purging Routine Loop
+        // Permanent Profile Destruction & Cascade Purging Routine Loop
         btnDeleteAccount.setOnAction(e -> {
             LOG.warn("Critical user account destruction script requested for active login session ID: {}", currentUser.getId());
             Alert confirmDelete = new Alert(Alert.AlertType.CONFIRMATION);
@@ -744,7 +728,7 @@ public class MainController {
                 try (Session session = DatabaseSession.open()) {
                     Transaction tx = session.beginTransaction();
 
-                    // CRITICAL COMPLIANCE FIX: Iteratively pull and delete media objects to ensure Hibernate triggers Cascades on parts.
+                    // Iteratively pull and delete media objects to ensure Hibernate triggers Cascades on parts.
                     List<Media> userMediaRoots = session.createQuery(
                                     "FROM Media m WHERE m.user.id = :userId", Media.class)
                             .setParameter("userId", currentUser.getId())

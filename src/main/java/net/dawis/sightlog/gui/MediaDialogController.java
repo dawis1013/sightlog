@@ -41,14 +41,14 @@ public class MediaDialogController {
         txtPartYear.setTextFormatter(new TextFormatter<>(chg -> chg.getControlNewText().matches("\\d{0,4}") ? chg : null));
         txtPartRating.setTextFormatter(new TextFormatter<>(chg -> chg.getControlNewText().matches("([0-9]{0,2}(\\.[0-9]?)?)?") ? chg : null));
 
-        // --- Database Constraint Rule Handler: Enforce Rating Trigger Integration ---
+        // Enforce Rating Trigger Integration
         cmbPartStatus.valueProperty().addListener((obs, oldStatus, newStatus) -> {
             if (newStatus == Status.FINISHED || newStatus == Status.DROPPED) {
                 txtPartRating.setDisable(false);
                 txtPartRating.setPromptText("e.g. 8.5");
             } else {
                 txtPartRating.setDisable(true);
-                txtPartRating.clear(); // Wipe inputs instantly to prevent constraint errors
+                txtPartRating.clear(); // wipe inputs instantly to prevent constraint errors
                 txtPartRating.setPromptText("Locked (Requires Finished/Dropped)");
             }
         });
@@ -65,11 +65,11 @@ public class MediaDialogController {
     public void setContext(Media selection) {
         if (selection != null) {
             LOG.debug("Setting context for existing media: {}", selection.getTitle());
-            // Rule: Collapse root fields when linking elements onto an existing parent record
+            // Collapse root fields when linking elements onto an existing parent record
             mediaSection.setVisible(false);
             mediaSection.setManaged(false);
 
-            // UX Automation: Pre-populate and guess next step sequence number
+            // Pre-populate and guess next step sequence number
             int nextIncrementalStep = (selection.getParts() != null) ? selection.getParts().size() + 1 : 1;
             txtPartNumber.setText(String.valueOf(nextIncrementalStep));
         } else {
@@ -159,11 +159,11 @@ public class MediaDialogController {
             part.setReleaseYear(Integer.parseInt(txtPartYear.getText().trim()));
         }
         
-        // Database Trigger Fail-safe Optimization: Ignore completely if disabled or blank
+        // Ignore completely if disabled or blank
         if (!txtPartRating.isDisabled() && !txtPartRating.getText().trim().isEmpty()) {
             part.setRating(Double.parseDouble(txtPartRating.getText().trim()));
         } else {
-            part.setRating(null); // Explicit fallback definition ensures trigger safety compliance
+            part.setRating(null); // fallback
         }
 
         part.setStartedAt(dpPartStarted.getValue());
@@ -181,20 +181,20 @@ public class MediaDialogController {
 
         Media media = part.getMedia();
 
-        // 1. Populate top-level Media form section
+        // Populate top-level Media form section
         txtMediaTitle.setText(media.getTitle());
         cmbMediaType.setValue(media.getMediaType());
         txtMediaCreator.setText(media.getCreator() != null ? media.getCreator() : "");
         txtMediaStudio.setText(media.getStudio() != null ? media.getStudio() : "");
         txtMediaDesc.setText(media.getDescription() != null ? media.getDescription() : "");
 
-        // 2. Populate tracking segment partition metrics
+        // Populate tracking segment partition metrics
         txtPartNumber.setText(String.valueOf(part.getPartNumber()));
         txtPartTitle.setText(part.getPartTitle() != null ? part.getPartTitle() : "");
         txtPartYear.setText(part.getReleaseYear() != null ? String.valueOf(part.getReleaseYear()) : "");
         cmbPartStatus.setValue(part.getStatus());
 
-        // Populate rating text safely
+        // Populate rating text
         if (part.getRating() != null) {
             txtPartRating.setText(String.valueOf(part.getRating()));
         } else {
